@@ -1,0 +1,40 @@
+{
+  "cpu_info": {
+    "vendor": "GenuineIntel",
+    "family": "205",
+    "model": "Intel(R) Core(TM) i5-6300HQ CPU @ 2.30GHz",
+    "mhz": "2304",
+    "cache_size": "0",
+    "user_agent": "CPUAgent/1.0 (DESKTOP-AD9PNG4; windows amd64; Intel(R) Core(TM) i5-6300HQ CPU @ 2.30GHz)"
+  },
+  "core_data": [
+    {
+      "core": 0,
+      "user_agent": "CPUAgent/1.0 (DESKTOP-AD9PNG4; windows amd64)",
+      "cpu_percent": 80,
+      "timestamp": "2025-09-03T14:26:38+02:00"
+    },
+    {
+      "core": 1,
+      "user_agent": "CPUAgent/1.0 (DESKTOP-AD9PNG4; windows amd64)",
+      "cpu_percent": 69.23076923076923,
+      "timestamp": "2025-09-03T14:26:38+02:00"
+    },
+    {
+      "core": 2,
+      "user_agent": "CPUAgent/1.0 (DESKTOP-AD9PNG4; windows amd64)",
+      "cpu_percent": 85.9375,
+      "timestamp": "2025-09-03T14:26:38+02:00"
+    },
+    {
+      "core": 3,
+      "user_agent": "CPUAgent/1.0 (DESKTOP-AD9PNG4; windows amd64)",
+      "cpu_percent": 92.1875,
+      "timestamp": "2025-09-03T14:26:38+02:00"
+    }
+  ],
+  "hostname": "DESKTOP-AD9PNG4",
+  "os": "windows",
+  "platform": "Microsoft Windows 11 Home",
+  "collected_at": "2025-09-03T14:26:38+02:00"
+}

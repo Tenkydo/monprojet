@@ -60,7 +60,7 @@
         
         .clients-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 25px;
             margin: 20px 0;
         }
@@ -188,6 +188,97 @@
             font-size: 1.1em;
             font-weight: bold;
         }
+
+        /* NOUVEAU: Styles pour les processus */
+        .processes-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .processes-section h4 {
+            color: #856404;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .processes-toggle {
+            background: none;
+            border: none;
+            color: #856404;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 2px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .processes-toggle:hover {
+            background-color: rgba(133, 100, 4, 0.1);
+        }
+
+        .processes-list {
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .processes-list.show {
+            display: block;
+        }
+
+        .process-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 4px 0;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 6px;
+            font-size: 0.85em;
+            transition: background-color 0.2s;
+        }
+
+        .process-item:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .process-name {
+            font-weight: bold;
+            color: #495057;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .process-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .process-cpu {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .process-mem {
+            color: #007bff;
+        }
+
+        .process-summary {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
         
         .no-clients {
             text-align: center;
@@ -247,6 +338,11 @@
                 flex-direction: column;
                 text-align: center;
             }
+
+            .process-stats {
+                flex-direction: column;
+                gap: 4px;
+            }
         }
     </style>
 </head>
@@ -257,6 +353,10 @@
             <div class="status-item">
                 <span>🖥️</span>
                 <span id="totalClients">0 Clients</span>
+            </div>
+            <div class="status-item">
+                <span>⚙️</span>
+                <span id="totalProcesses">0 Processus</span>
             </div>
             <div class="status-item">
                 <span>🔄</span>
@@ -295,6 +395,65 @@
             if (cpuPercent > 80) return 'high-load';
             if (cpuPercent > 50) return 'medium-load';
             return 'low-load';
+        }
+
+        function toggleProcesses(hostname) {
+            const processList = document.getElementById(`processes-${hostname}`);
+            const toggleBtn = document.getElementById(`toggle-${hostname}`);
+            
+            if (processList.classList.contains('show')) {
+                processList.classList.remove('show');
+                toggleBtn.textContent = '▶';
+            } else {
+                processList.classList.add('show');
+                toggleBtn.textContent = '▼';
+            }
+        }
+
+        function createProcessesSection(hostname, processes) {
+            if (!processes || processes.length === 0) {
+                return `
+                    <div class="processes-section">
+                        <h4>⚙️ Processus <span style="color: #6c757d;">(0)</span></h4>
+                        <div class="process-summary">Aucun processus détecté</div>
+                    </div>
+                `;
+            }
+
+            // Tri par CPU décroissant
+            const sortedProcesses = [...processes].sort((a, b) => b.cpu_percent - a.cpu_percent);
+            const topProcesses = sortedProcesses.slice(0, 10); // Top 10
+
+            // Statistiques
+            const runningCount = processes.filter(p => p.status === 'R' || p.status === 'running').length;
+            const totalCPU = processes.reduce((sum, p) => sum + p.cpu_percent, 0);
+            const totalMem = processes.reduce((sum, p) => sum + p.memory_percent, 0);
+
+            return `
+                <div class="processes-section">
+                    <h4>
+                        <button class="processes-toggle" id="toggle-${hostname}" onclick="toggleProcesses('${hostname}')">▶</button>
+                        ⚙️ Processus <span style="color: #6c757d;">(${processes.length})</span>
+                    </h4>
+                    <div class="process-summary">
+                        <span>🏃 Actifs: ${runningCount}</span>
+                        <span>📊 CPU Total: ${totalCPU.toFixed(1)}%</span>
+                        <span>💾 Mém Total: ${totalMem.toFixed(1)}%</span>
+                    </div>
+                    <div class="processes-list" id="processes-${hostname}">
+                        ${topProcesses.map(proc => `
+                            <div class="process-item" title="PID: ${proc.pid} | User: ${proc.username} | Status: ${proc.status}">
+                                <span class="process-name">${proc.name}</span>
+                                <div class="process-stats">
+                                    <span class="process-cpu">CPU: ${proc.cpu_percent.toFixed(1)}%</span>
+                                    <span class="process-mem">Mém: ${proc.memory_percent.toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${processes.length > 10 ? `<div style="text-align: center; color: #6c757d; font-size: 0.8em; margin-top: 10px;">... et ${processes.length - 10} autres processus</div>` : ''}
+                    </div>
+                </div>
+            `;
         }
         
         function createClientCard(hostname, data) {
@@ -353,6 +512,8 @@
                     `).join('')}
                 </div>
                 
+                ${createProcessesSection(hostname, data.processes)}
+                
                 <div style="text-align: center; color: #6c757d; font-size: 0.8em; margin-top: 15px;">
                     Dernière collecte: ${formatTimestamp(data.collected_at)}
                 </div>
@@ -371,9 +532,18 @@
                 const data = await response.json();
                 const container = document.getElementById('clientsContainer');
                 
+                // Calcul du nombre total de processus
+                let totalProcesses = 0;
+                Object.values(data.clients).forEach(clientData => {
+                    if (clientData.processes) {
+                        totalProcesses += clientData.processes.length;
+                    }
+                });
+                
                 // Mise à jour des statistiques dans l'en-tête
                 const clientCount = Object.keys(data.clients).length;
                 document.getElementById('totalClients').textContent = `${clientCount} Client${clientCount !== 1 ? 's' : ''}`;
+                document.getElementById('totalProcesses').textContent = `${totalProcesses} Processus`;
                 document.getElementById('refreshStatus').textContent = '✅ Connecté';
                 document.getElementById('lastUpdate').textContent = formatTimestamp(data.last_update);
                 document.getElementById('footerUpdate').textContent = formatTimestamp(data.last_update);
@@ -404,6 +574,7 @@
             } catch (error) {
                 console.error('Erreur lors du chargement des données:', error);
                 document.getElementById('refreshStatus').textContent = '❌ Erreur connexion';
+                document.getElementById('totalProcesses').textContent = '0 Processus';
                 document.getElementById('clientsContainer').innerHTML = `
                     <div class="no-clients">
                         <h3>❌ Erreur de connexion</h3>
