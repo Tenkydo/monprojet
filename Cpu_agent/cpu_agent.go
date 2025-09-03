@@ -324,10 +324,15 @@ func main() {
 	fmt.Println("🚀 Démarrage de l'Agent CPU Client avec Monitoring des Processus")
 	fmt.Println("===============================================================")
 
-	// Configuration
-	serverURL := "http://192.168.54.203:8888"
+	// Configuration par défaut : liste de serveurs
+	servers := []string{
+		"http://192.168.54.203:8888",
+		"http://192.168.54.109:8888",
+	}
+
+	// Si on passe des IPs en argument, elles remplacent la liste
 	if len(os.Args) > 1 {
-		serverURL = os.Args[1]
+		servers = os.Args[1:]
 	}
 
 	// Paramètres par défaut
@@ -338,7 +343,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("🌐 Serveur cible: %s\n", serverURL)
+	fmt.Printf("🌐 Serveurs cibles: %v\n", servers)
 	fmt.Printf("⏱️  Intervalle: %v\n", interval)
 	fmt.Println("===============================================================")
 
@@ -368,15 +373,17 @@ func main() {
 	case "1":
 		// Test unique
 		fmt.Println("\n🔄 Envoi unique...")
-		if err := sendDataToServer(data, serverURL); err != nil {
-			log.Printf("❌ Erreur: %v", err)
+		for _, server := range servers {
+			if err := sendDataToServer(data, server); err != nil {
+				log.Printf("❌ Erreur envoi à %s: %v", server, err)
+			}
 		}
-		
+
 	case "2":
 		// Monitoring continu
 		fmt.Printf("\n🔄 Démarrage du monitoring continu (intervalle: %v)\n", interval)
 		fmt.Println("Appuyez sur Ctrl+C pour arrêter...")
-		
+
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
@@ -391,27 +398,28 @@ func main() {
 
 				displayTopProcesses(data.Processes, 3)
 
-				if err := sendDataToServer(data, serverURL); err != nil {
-					log.Printf("❌ Erreur envoi: %v", err)
-					// Sauvegarde locale en cas d'erreur réseau
-					saveLocalCopy(data)
+				for _, server := range servers {
+					if err := sendDataToServer(data, server); err != nil {
+						log.Printf("❌ Erreur envoi à %s: %v", server, err)
+						saveLocalCopy(data)
+					}
 				}
 			}
 		}
-		
+
 	case "3":
 		// Sauvegarde locale seulement
 		fmt.Println("\n💾 Sauvegarde locale...")
 		if err := saveLocalCopy(data); err != nil {
 			log.Printf("❌ Erreur sauvegarde: %v", err)
 		}
-		
+
 	case "4":
 		// Affichage détaillé
 		fmt.Println("\n📋 Affichage détaillé des données collectées:")
 		jsonData, _ := json.MarshalIndent(data, "", "  ")
 		fmt.Println(string(jsonData))
-		
+
 	default:
 		fmt.Println("❌ Choix invalide")
 	}
