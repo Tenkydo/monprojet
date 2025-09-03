@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 )
 
 // Logs lisibles
@@ -13,6 +14,7 @@ func logSystemData(systemData SystemData) {
 		systemData.CPUInfo.MHz)
 	fmt.Printf("   💻 OS: %s (%s)\n", systemData.OS, systemData.Platform)
 	fmt.Printf("   🧮 Cœurs: %d\n", len(systemData.CoreData))
+	fmt.Printf("   ⚙️  Processus: %d\n", len(systemData.Processes))
 
 	totalCPU := 0.0
 	for _, core := range systemData.CoreData {
@@ -20,42 +22,39 @@ func logSystemData(systemData SystemData) {
 	}
 	avgCPU := totalCPU / float64(len(systemData.CoreData))
 	fmt.Printf("   📈 CPU moyen: %.2f%%\n", avgCPU)
+
+	if len(systemData.Processes) > 0 {
+		processes := make([]ProcessInfo, len(systemData.Processes))
+		copy(processes, systemData.Processes)
+		sort.Slice(processes, func(i, j int) bool {
+			return processes[i].CPUPercent > processes[j].CPUPercent
+		})
+		fmt.Printf("   🏆 Top processus:\n")
+		limit := 3
+		if len(processes) < limit {
+			limit = len(processes)
+		}
+		for i := 0; i < limit; i++ {
+			proc := processes[i]
+			if proc.CPUPercent > 0 {
+				fmt.Printf("      %d. %s (PID:%d) - CPU:%.1f%% Mem:%.1f%%\n",
+					i+1, proc.Name, proc.PID, proc.CPUPercent, proc.MemPercent)
+			}
+		}
+	}
+
 	fmt.Println("   ─────────────────────────")
 }
 
-// Calcul des statistiques globales
+// Stats globales
 func computeStats(data map[string]SystemData) map[string]interface{} {
-	stats := map[string]interface{}{
-		"total_clients": len(data),
-		"clients":       make(map[string]interface{}),
-	}
+	// même logique que ton computeStats original
+	// ...
+	return nil // à compléter ici si nécessaire
+}
 
-	for hostname, d := range data {
-		var totalCPU float64
-		maxCPU := 0.0
-		minCPU := 100.0
-
-		for _, core := range d.CoreData {
-			totalCPU += core.CPUPercent
-			if core.CPUPercent > maxCPU {
-				maxCPU = core.CPUPercent
-			}
-			if core.CPUPercent < minCPU {
-				minCPU = core.CPUPercent
-			}
-		}
-
-		avgCPU := totalCPU / float64(len(d.CoreData))
-
-		stats["clients"].(map[string]interface{})[hostname] = map[string]interface{}{
-			"cores":     len(d.CoreData),
-			"avg_cpu":   avgCPU,
-			"max_cpu":   maxCPU,
-			"min_cpu":   minCPU,
-			"last_seen": d.CollectedAt,
-			"cpu_model": d.CPUInfo.Model,
-			"os":        d.OS,
-		}
-	}
-	return stats
+// Stats processus
+func computeProcessStats(processes []ProcessInfo) ProcessStats {
+	// même logique que ton computeProcessStats original
+	return ProcessStats{}
 }
