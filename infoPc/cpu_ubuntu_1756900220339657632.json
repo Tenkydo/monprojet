@@ -1,0 +1,34 @@
+{
+  "cpu_info": {
+    "vendor": "GenuineIntel",
+    "family": "6",
+    "model": "Intel(R) Core(TM) i5-6300HQ CPU @ 2.30GHz",
+    "mhz": "2304",
+    "cache_size": "6144",
+    "user_agent": "CPUAgent/1.0 (ubuntu; linux amd64; Intel(R) Core(TM) i5-6300HQ CPU @ 2.30GHz)"
+  },
+  "core_data": [
+    {
+      "core": 0,
+      "user_agent": "CPUAgent/1.0 (ubuntu; linux amd64)",
+      "cpu_percent": 55.81395348849506,
+      "timestamp": "2025-09-03T11:50:20Z"
+    },
+    {
+      "core": 1,
+      "user_agent": "CPUAgent/1.0 (ubuntu; linux amd64)",
+      "cpu_percent": 68.67469879515168,
+      "timestamp": "2025-09-03T11:50:20Z"
+    },
+    {
+      "core": 2,
+      "user_agent": "CPUAgent/1.0 (ubuntu; linux amd64)",
+      "cpu_percent": 73.41772151895091,
+      "timestamp": "2025-09-03T11:50:20Z"
+    }
+  ],
+  "hostname": "ubuntu",
+  "os": "linux",
+  "platform": "ubuntu",
+  "collected_at": "2025-09-03T11:50:20Z"
+}

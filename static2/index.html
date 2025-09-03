@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Monitor Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(103, 126, 234, 0.1);
+            border-radius: 25px;
+            font-weight: bold;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .clients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        
+        .client-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .client-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .client-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+        
+        .client-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .client-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .client-status {
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status-online {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .cpu-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .cpu-info h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #6c757d;
+        }
+        
+        .cores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .core {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 12px 8px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .core:hover {
+            transform: scale(1.05);
+        }
+        
+        .core.high-load {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+        }
+        
+        .core.medium-load {
+            background: linear-gradient(45deg, #f7971e, #ffd200);
+        }
+        
+        .core.low-load {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+        }
+        
+        .core-number {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+        
+        .core-usage {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .no-clients {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            margin: 40px 0;
+        }
+        
+        .no-clients h3 {
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        
+        .no-clients p {
+            color: #868e96;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading::after {
+            content: '⏳';
+            font-size: 2em;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .last-update {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .clients-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .client-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🖥️ CPU Monitor Dashboard</h1>
+        <div class="status-bar">
+            <div class="status-item">
+                <span>🖥️</span>
+                <span id="totalClients">0 Clients</span>
+            </div>
+            <div class="status-item">
+                <span>🔄</span>
+                <span id="refreshStatus">Chargement...</span>
+            </div>
+            <div class="status-item">
+                <span>⏰</span>
+                <span id="lastUpdate">-</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="clientsContainer" class="clients-grid">
+            <div class="loading">Chargement des données...</div>
+        </div>
+        
+        <div id="lastUpdateFooter" class="last-update">
+            Dernière mise à jour: <span id="footerUpdate">-</span>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval;
+        
+        function formatTimestamp(timestamp) {
+            return new Date(timestamp).toLocaleString('fr-FR');
+        }
+        
+        function getStatusClass(avgCpu) {
+            if (avgCpu > 80) return 'status-warning';
+            return 'status-online';
+        }
+        
+        function getCoreClass(cpuPercent) {
+            if (cpuPercent > 80) return 'high-load';
+            if (cpuPercent > 50) return 'medium-load';
+            return 'low-load';
+        }
+        
+        function createClientCard(hostname, data) {
+            const avgCpu = data.core_data.reduce((sum, core) => sum + core.cpu_percent, 0) / data.core_data.length;
+            const maxCpu = Math.max(...data.core_data.map(core => core.cpu_percent));
+            
+            const card = document.createElement('div');
+            card.className = 'client-card';
+            card.innerHTML = `
+                <div class="client-header">
+                    <div class="client-name">${hostname}</div>
+                    <div class="client-status ${getStatusClass(avgCpu)}">
+                        ${avgCpu > 80 ? '⚠️ Charge élevée' : '✅ Normal'}
+                    </div>
+                </div>
+                
+                <div class="cpu-info">
+                    <h4>🖥️ Informations CPU</h4>
+                    <div class="info-row">
+                        <span class="info-label">Modèle:</span>
+                        <span>${data.cpu_info.vendor} ${data.cpu_info.model}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Fréquence:</span>
+                        <span>${data.cpu_info.mhz} MHz</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Cache:</span>
+                        <span>${data.cpu_info.cache_size} KB</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">OS:</span>
+                        <span>${data.os} (${data.platform})</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Cœurs:</span>
+                        <span>${data.core_data.length}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">CPU Moyen:</span>
+                        <span>${avgCpu.toFixed(1)}%</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">CPU Max:</span>
+                        <span>${maxCpu.toFixed(1)}%</span>
+                    </div>
+                </div>
+                
+                <h4>📊 Utilisation par cœur</h4>
+                <div class="cores-grid">
+                    ${data.core_data.map(core => `
+                        <div class="core ${getCoreClass(core.cpu_percent)}" title="Cœur ${core.core}: ${core.cpu_percent.toFixed(1)}%">
+                            <div class="core-number">C${core.core}</div>
+                            <div class="core-usage">${core.cpu_percent.toFixed(1)}%</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div style="text-align: center; color: #6c757d; font-size: 0.8em; margin-top: 15px;">
+                    Dernière collecte: ${formatTimestamp(data.collected_at)}
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        async function loadClientsData() {
+            try {
+                const response = await fetch('/api/clients');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const container = document.getElementById('clientsContainer');
+                
+                // Mise à jour des statistiques dans l'en-tête
+                const clientCount = Object.keys(data.clients).length;
+                document.getElementById('totalClients').textContent = `${clientCount} Client${clientCount !== 1 ? 's' : ''}`;
+                document.getElementById('refreshStatus').textContent = '✅ Connecté';
+                document.getElementById('lastUpdate').textContent = formatTimestamp(data.last_update);
+                document.getElementById('footerUpdate').textContent = formatTimestamp(data.last_update);
+                
+                // Effacement du conteneur
+                container.innerHTML = '';
+                
+                if (clientCount === 0) {
+                    container.innerHTML = `
+                        <div class="no-clients">
+                            <h3>🔍 Aucun client connecté</h3>
+                            <p>En attente de connexion des agents CPU...</p>
+                            <p><strong>Pour connecter un agent:</strong></p>
+                            <p>1. Compilez l'agent: <code>go run cpu_agent.go</code></p>
+                            <p>2. Ou spécifiez le serveur: <code>go run cpu_agent.go http://votre-serveur:8888</code></p>
+                        </div>
+                    `;
+                } else {
+                    // Tri des clients par nom
+                    const sortedClients = Object.entries(data.clients)
+                        .sort(([a], [b]) => a.localeCompare(b));
+                    
+                    sortedClients.forEach(([hostname, clientData]) => {
+                        container.appendChild(createClientCard(hostname, clientData));
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Erreur lors du chargement des données:', error);
+                document.getElementById('refreshStatus').textContent = '❌ Erreur connexion';
+                document.getElementById('clientsContainer').innerHTML = `
+                    <div class="no-clients">
+                        <h3>❌ Erreur de connexion</h3>
+                        <p>Impossible de charger les données du serveur.</p>
+                        <p>Vérifiez que le serveur est démarré sur le port 8888.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function startAutoRefresh() {
+            // Chargement initial
+            loadClientsData();
+            
+            // Actualisation automatique toutes les 5 secondes
+            refreshInterval = setInterval(loadClientsData, 5000);
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+        
+        // Gestion de la visibilité de la page
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+        
+        // Démarrage automatique
+        window.addEventListener('load', startAutoRefresh);
+        
+        // Nettoyage au déchargement de la page
+        window.addEventListener('beforeunload', stopAutoRefresh);
+        
+        // Gestion des erreurs globales
+        window.addEventListener('error', function(event) {
+            console.error('Erreur JavaScript:', event.error);
+        });
+        
+        // Raccourcis clavier
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'F5' || (event.ctrlKey && event.key === 'r')) {
+                event.preventDefault();
+                loadClientsData();
+            }
+        });
+    </script>
+</body>
+</html>
